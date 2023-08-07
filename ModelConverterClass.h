@@ -15,8 +15,6 @@
 
 #define ERROR_MSG "%s() (%d): %s",__FUNCTION__, __LINE__
 
-#include <DirectXMath.h>
-
 #include <windows.h>
 #include <fstream>
 #include <sstream>
@@ -61,8 +59,8 @@ private:
 										 //    technical lines or empty lines so skip it until 
 										 //    the next data block which starts with symbols are
 										 //    stored in the skipUntilPrefix variable);
-	bool ReadInVerticesData(ifstream & fin);
-	bool ReadInTextureData(ifstream & fin);
+	bool ReadInAndWriteVerticesData(ifstream & fin, ofstream & fout);
+	bool ReadInAndWriteTexturesData(ifstream & fin, ofstream & fout);
 	bool ReadInNormalsData(ifstream & fin);
 	bool ReadInFacesData(ifstream & fin);
 
@@ -79,9 +77,28 @@ private:
 
 
 private:
-	DirectX::XMFLOAT3*   pPoint3D_ = nullptr;
-	DirectX::XMFLOAT2*   pTexCoord_ = nullptr;
-	DirectX::XMFLOAT3*   pNormal_ = nullptr;
+	struct VERTEX3D
+	{
+		float x = 0.0f;
+		float y = 0.0f;
+		float z = 0.0f;
+	};
+
+	struct TEXTURE_COORDS
+	{
+		float tu = 0.0f;
+		float tv = 0.0f;
+	};
+
+	struct NORMAL
+	{
+		float nx = 0.0f;
+		float ny = 0.0f;
+	};
+
+	
+	
+	NORMAL            normal_;
 
 	char* inputLineBuffer_ = nullptr;                   // during execution of the getline() function we put here a one single text line
 

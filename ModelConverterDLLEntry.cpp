@@ -3,6 +3,7 @@
 #include "ModelConverterDLLEntry.h"
 #include "ModelConverterClass.h"
 #include <iostream>
+#include <cassert>
 
 
 void ModelConverter::ImportModelFromFile(
