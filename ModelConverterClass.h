@@ -61,7 +61,7 @@ private:
 										 //    stored in the skipUntilPrefix variable);
 	bool ReadInAndWriteVerticesData(ifstream & fin, ofstream & fout);
 	bool ReadInAndWriteTexturesData(ifstream & fin, ofstream & fout);
-	bool ReadInNormalsData(ifstream & fin);
+	bool ReadInAndWriteNormalsData(ifstream & fin, ofstream & fout);
 	bool ReadInFacesData(ifstream & fin);
 
 	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations
@@ -72,8 +72,7 @@ private:
 	// output data file writing handlers 
 	bool WriteDataIntoOutputFile(ofstream & fout);  // write model data in an internal model format into the output data file
 	bool WriteIndicesIntoOutputFile(ofstream & fout);
-	bool WriteVerticesIntoOutputFile(ofstream & fout);
-	bool WriteTexturesIntoOutputFile(ofstream & fout);
+
 
 
 private:
@@ -94,6 +93,7 @@ private:
 	{
 		float nx = 0.0f;
 		float ny = 0.0f;
+		float nz = 0.0f;
 	};
 
 	
