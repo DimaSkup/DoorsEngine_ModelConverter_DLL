@@ -134,13 +134,13 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 
 	// write the number of vertices/indices/texture coords into the output data file
 	fout << "Vertex Count: " << verticesCount_ << "\n";
-	fout << "Indices Count: " << vertexIndicesArray_.size() << "\n";
+	fout << "Indices Count: " << facesCount_ * 3 << "\n";         // each face has 3 vertices
 	fout << "Textures Count: " << textureCoordsCount_ << "\n\n";
 
 
 	// because we've went up to the end of the file (EOF) 
 	// during reading of counts we have to clear ifstream state
-	fin.clear();             
+	fin.clear();
 	fin.seekg(0, fin.beg);   // go to the beginning of the file
 
 
@@ -149,6 +149,8 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 		PrintError(ERROR_MSG, "can't read/write vertices data");
 		return false;
 	}
+
+	std::cout << "VERTICES DATA WAS READ AND WRITTEN SUCCESSFULLY" << std::endl;
 
 	fin.clear();             // because we've went up to the end of the file (EOF) we have to clear ifstream state
 	fin.seekg(0, fin.beg);   // go to the beginning of the file
@@ -159,7 +161,8 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 		return false;
 	}
 
-	
+	std::cout << "TEXTURE DATA WAS READ AND WRITTEN SUCCESSFULLY" << std::endl;
+
 	/*
 	if (!ReadInAndWriteNormalsData(fin, fout))
 	{
@@ -176,6 +179,10 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 		PrintError(ERROR_MSG, "can't read in faces data");
 		return false;
 	}
+	std::cout << "FACES DATA WAS READ SUCCESSFULLY" << std::endl;
+
+	fin.clear();             // because we've went up to the end of the file (EOF) we have to clear ifstream state
+	fin.seekg(0, fin.beg);   // go to the beginning of the file
 
 
 	if (!this->WriteIndicesIntoOutputFile(fout))
@@ -184,11 +191,12 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 		return false;
 	}
 
+	std::cout << "FACES DATA WAS WRITTEN SUCCESSFULLY" << std::endl;
 
 
 
 	std::cout << "CONVERTATION IS FINISHED" << std::endl;
-	
+
 
 	// after each convertation we MUST reset the state of the converter for proper later convertations
 	//ResetConverterState();        
@@ -202,7 +210,7 @@ bool ModelConverterClass::ConvertFromObjHelper(ifstream& fin, ofstream& fout)
 void ModelConverterClass::SkipUntilVerticesData(ifstream & fin)
 {
 	// contains a position right before the vertices data
-	streampos posBeforeVerticesData = 0;    
+	streampos posBeforeVerticesData = 0;
 
 	// Read up to the vertex values
 	while (inputLineBuffer_[0] != 'v')
@@ -228,9 +236,16 @@ void ModelConverterClass::ReadCounts(ifstream & fin)
 	this->CalculateCount(fin, verticesCount_, posBeforeTexturesData_, "VERTICES", "v ", "vt");
 	this->CalculateCount(fin, textureCoordsCount_, posBeforeNormalsData_, "TEXTURES", "vt", "vn");
 	this->CalculateCount(fin, normalsCount_, posBeforeFacesData_, "NORMALS", "vn", "f");
-	this->CalculateCount(fin, facesCount_, streampos(), "FACES", "f ", "  ");
+	//this->CalculateCount(fin, facesCount_, streampos(), "FACES", "f ", "  ");
 
-	
+	while (!fin.eof())
+	{
+		if ((inputLineBuffer_[0] == 'f') && (inputLineBuffer_[1] == ' '))
+		{
+			facesCount_++;
+		}
+		fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_);
+	}
 
 	return;
 }
@@ -245,7 +260,7 @@ void ModelConverterClass::CalculateCount(ifstream & fin,
 	std::string prefix,              // 4. each line of the current data block starts with this prefix
 	std::string skipUntilPrefix)     // 5. skip input symbols until we come across this prefix (the next data block)
 {
-	std::cout << "GO THROUGH " << dataType << '\n';
+	//std::cout << "GO THROUGH " << dataType << '\n';
 
 
 	try
@@ -258,8 +273,12 @@ void ModelConverterClass::CalculateCount(ifstream & fin,
 			fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_);
 		}
 
-		std::cout << "\n";
+		//std::cout << "\n";
 
+
+	
+		
+		
 		// skip lines until the next block of data
 		while ((inputLineBuffer_[0] != skipUntilPrefix[0]) &&
 			   (inputLineBuffer_[1] != skipUntilPrefix[1]))
@@ -271,6 +290,7 @@ void ModelConverterClass::CalculateCount(ifstream & fin,
 		// calculate the file ptr position right before the next data block
 		posBeforeNextBlock = fin.tellg();
 		posBeforeNextBlock -= strlen(inputLineBuffer_);
+		
 	}
 	catch (std::ifstream::failure e)
 	{
@@ -278,7 +298,7 @@ void ModelConverterClass::CalculateCount(ifstream & fin,
 		this->PrintError(ERROR_MSG, e.what());
 	}
 
-	std::cout << "\n\n";
+	//std::cout << "\n\n";
 
 	return;
 }
@@ -289,9 +309,9 @@ void ModelConverterClass::CalculateCount(ifstream & fin,
 // and right after it we write this data into the output data file
 bool ModelConverterClass::ReadInAndWriteVerticesData(ifstream & fin, ofstream & fout)
 {
-	VERTEX3D  vertex3D;
+	
 	char input;                          // for reading the '\n' symbol
-
+	VERTEX3D  vertex3D;
 
 	try
 	{
@@ -302,10 +322,12 @@ bool ModelConverterClass::ReadInAndWriteVerticesData(ifstream & fin, ofstream & 
 		for (size_t i = 0; i < verticesCount_; i++)
 		{
 			// read vertex data from the input data file 
-			fin.ignore(2);                                              // skip the "v" and " " (space) symbols at the beginning of the line
+			fin.ignore(1);                                              // skip the "v" symbol at the beginning of the line
 			fin >> vertex3D.x >> vertex3D.y >> vertex3D.z >> input;     // read in x, y, z vertex coordinates and the '\n' symbol
 
-			
+			if (i < 3)
+				std::cout << "v[" << i << "]: " << vertex3D.x << std::endl;
+
 			fout.setf(ios::fixed, ios::floatfield);
 			fout.precision(6);
 
@@ -331,6 +353,7 @@ bool ModelConverterClass::ReadInAndWriteTexturesData(ifstream & fin, ofstream & 
 {
 	TEXTURE_COORDS texCoords;
 	char input;                                   // for reading the '\n' symbol
+	std::string vt;
 	
 	try
 	{
@@ -339,9 +362,33 @@ bool ModelConverterClass::ReadInAndWriteTexturesData(ifstream & fin, ofstream & 
 
 		for (size_t i = 0; i < textureCoordsCount_; i++)
 		{
+
+			/*
+			
+			std::cout << "FROM HERE TEXTURES" << std::endl << std::endl;
+			while (!fin.eof())
+			{
+				char c = fin.get();
+				if (c == '\n')
+				{
+					std::cout << "\nNEW LINE\n" << std::endl;
+				}
+				else
+				{
+					std::cout << c;
+				}
+			}
+			exit(-1);
+			*/
+
+
+
 			// read texture data from the input data file 
-			fin.ignore(3);                          // ignore the "vt " symbols in the beginning of line
-			fin >> texCoords.tu >> texCoords.tv;    // read in texture coords data
+			//fin.ignore(3);                          // ignore the "vt" symbols in the beginning of line
+			fin >> vt >> texCoords.tu >> texCoords.tv;    // read in texture coords data
+			//std::cout << "vt = " << vt << std::endl;
+			//std::cout << "tex[" << i << "]: " << texCoords.tu << " : " << texCoords.tv << std::endl;
+
 
 			fout.setf(ios::fixed, ios::floatfield);
 			fout.precision(6);
@@ -351,6 +398,7 @@ bool ModelConverterClass::ReadInAndWriteTexturesData(ifstream & fin, ofstream & 
 				 << 1.0f - texCoords.tv       // invert the value to use it in the left handed coordinate system
 				 << "\n";
 		}
+
 
 		fout << "\n\n";                       // in the output data file: make a separation space before the next data block 
 	}
@@ -403,71 +451,101 @@ bool ModelConverterClass::ReadInAndWriteNormalsData(ifstream& fin, ofstream & fo
 
 bool ModelConverterClass::ReadInFacesData(ifstream & fin)
 {
-	int vertexIndex = 0;
-	int textureIndex = 0;
-	int normalIndex = 0;
+	// clear the arrays if we had some data in it before
+	delete[] pVertexIndicesArray_;
+	delete[] pTextureIndicesArray_;
+	pVertexIndicesArray_ = nullptr;
+	pTextureIndicesArray_ = nullptr;
+
+	// allocate memory for vertices/texture coords indices
+	pVertexIndicesArray_ = new UINT[facesCount_ * 3]{ 0 };   // each face has 3 vertices
+	pTextureIndicesArray_ = new UINT[facesCount_ * 3]{ 0 };  // each face has 3 texture coords
+
+
+	UINT vertexIndex = 0;
+	UINT textureIndex = 0;
+	UINT normalIndex = 0;
+	UINT arrayIndex = 0;
 
 	inputLineBuffer_[0] = '\0';
 	
 	fin.seekg(posBeforeFacesData_, fin.beg);	// now we at the position before the beginning of polygonal face data
 	fin.seekg(-1, fin.cur);
-
-	/*
 	
-	std::cout << "\n\n\nFACES DATA:\n";
+
+
+
+	// go through each face until the end of the file (EOF)
 	while (!fin.eof())
 	{
-		std::cout << (char)fin.get();
-	}
-	exit(-1);
-	*/
+		// if the current line doesn't contain data of a face we just skip this line
+		fin.getline(inputLineBuffer_, INPUT_LINE_SIZE_, '\n');
 
-	// go through each face 
-	for (size_t faceIndex = 0; faceIndex < facesCount_; faceIndex++)
-	{
-		// skip the 'f' and ' ' (space) symbols at the beginning of the line
-		fin.ignore(2);  
-
-		// go through each vertex of the current face
-		for (size_t faceVertex = 1; faceVertex <= 3; faceVertex++)
+		if (inputLineBuffer_[0] != 'f')
 		{
-			// read in a vertex index
-			fin >> vertexIndex;
-			if (fin.bad())
-			{
-				PrintError(ERROR_MSG, "error about reading of the vertex index");
-				return false;
-			}
-			fin.ignore();  // ignore "/"
-
-						   // read in a texture index
-			fin >> textureIndex;
-			if (fin.bad())
-			{
-				PrintError(ERROR_MSG, "error about reading of the texture index");
-				return false;
-			}
-			fin.ignore();  // ignore "/"
-
-						   // read in an index of the normal vector
-			fin >> normalIndex;
-			if (fin.bad())
-			{
-				PrintError(ERROR_MSG, "error about reading of the normal index");
-				return false;
-			}
-			fin.get();     // read up the space (or '\n') after each set of v/vt/vn
-
-
-			// write point/texture/normal data into the vertexArray
-			vertexIndex--;
-			textureIndex--;
-			normalIndex--;
-
-			vertexIndicesArray_.push_back(vertexIndex);   // write the index of a vertex coord
-			textureIndicesArray_.push_back(textureIndex);  // write the index of a texture coord
+			//std::cout << "skip line: " << inputLineBuffer_ << std::endl;
 		}
-	}
+		else   // this line contains face data
+		{
+			// turn back at the beginning of this line
+			fin.seekg(-1 - strlen(inputLineBuffer_), fin.cur);  
+			
+			std::string symbolsAtLineBeginning;
+			fin >> symbolsAtLineBeginning;
+
+			//std::cout << "symbols: " << symbolsAtLineBeginning << std::endl;
+			
+			// go through each vertex of the current face
+			for (size_t faceVertex = 1; faceVertex <= 3; faceVertex++)
+			{
+				// read in a vertex index
+				fin >> vertexIndex;
+				if (fin.bad())
+				{
+					PrintError(ERROR_MSG, "error about reading of the vertex index");
+					return false;
+				}
+				fin.ignore();  // ignore "/"
+
+							   // read in a texture index
+				fin >> textureIndex;
+				if (fin.bad())
+				{
+					PrintError(ERROR_MSG, "error about reading of the texture index");
+					return false;
+				}
+				fin.ignore();  // ignore "/"
+
+							   // read in an index of the normal vector
+				fin >> normalIndex;
+				if (fin.bad())
+				{
+					PrintError(ERROR_MSG, "error about reading of the normal index");
+					return false;
+				}
+
+				
+				fin.get();     // read up the space (or '\n') after each set of v/vt/vn
+
+
+				// write point/texture/normal data into the vertexArray
+				vertexIndex--;
+				textureIndex--;
+				normalIndex--;
+
+				pVertexIndicesArray_[arrayIndex] = vertexIndex;
+				pTextureIndicesArray_[arrayIndex] = textureIndex;
+				arrayIndex++;
+
+				//pVertexIndicesArray_.push_back(vertexIndex);   // write the index of a vertex coord
+				//pTextureIndicesArray_.push_back(textureIndex);  // write the index of a texture coord
+
+			} // for
+		} // else
+	} // while(!fin.eof())
+
+	std::cout << "first vertex index: " << pVertexIndicesArray_[0] << std::endl;
+
 	return true;
 }
 
@@ -477,11 +555,11 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 	// VERTEX INDICES WRITING
 	fout << "Vertex Indices Data:" << "\n\n";
 
-	for (size_t it = 0; it < vertexIndicesArray_.size() - 2; it += 3)
+	for (size_t it = 0; it < facesCount_ * 3 - 2; it += 3)
 	{
-		fout << vertexIndicesArray_[it + 2] << ' ';
-		fout << vertexIndicesArray_[it + 1] << ' ';
-		fout << vertexIndicesArray_[it] << endl;
+		fout << pVertexIndicesArray_[it + 2] << ' ';
+		fout << pVertexIndicesArray_[it + 1] << ' ';
+		fout << pVertexIndicesArray_[it] << endl;
 	}
 	fout.seekp(-1, ios::cur);
 	fout << "\n\n";
@@ -490,11 +568,11 @@ bool ModelConverterClass::WriteIndicesIntoOutputFile(ofstream & fout)
 	// TEXTURE INDICES WRITING
 	fout << "Texture Indices Data:" << "\n\n";
 
-	for (size_t it = 0; it < textureIndicesArray_.size() - 2; it += 3)
+	for (size_t it = 0; it < facesCount_ * 3 - 2; it += 3)
 	{
-		fout << textureIndicesArray_[it + 2] << ' ';
-		fout << textureIndicesArray_[it + 1] << ' ';
-		fout << textureIndicesArray_[it] << endl;
+		fout << pTextureIndicesArray_[it + 2] << ' ';
+		fout << pTextureIndicesArray_[it + 1] << ' ';
+		fout << pTextureIndicesArray_[it] << endl;
 	}
 
 	return true;
@@ -529,8 +607,8 @@ bool ModelConverterClass::ResetConverterState()
 	facesCount_ = 0;
 
 	//modelData.clear();
-	vertexIndicesArray_.clear();
-	textureIndicesArray_.clear();
+	//pVertexIndicesArray_.clear();
+	//pTextureIndicesArray_.clear();
 	inputLineBuffer_[0] = '\0';
 
 	return true;

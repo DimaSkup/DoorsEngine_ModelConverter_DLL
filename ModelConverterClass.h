@@ -112,8 +112,8 @@ private:
 	int normalsCount_ = 0;
 	int facesCount_ = 0;
 
-	std::vector<UINT> vertexIndicesArray_;
-	std::vector<UINT> textureIndicesArray_;
+	UINT* pVertexIndicesArray_ = nullptr;
+	UINT* pTextureIndicesArray_ = nullptr;
 
 	bool isPrintConvertProcessMessages_ = false;  // defines whether to print or not in the console messages about the convertation process    
 
