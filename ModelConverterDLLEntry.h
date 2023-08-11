@@ -23,7 +23,7 @@ namespace ModelConverter
 	//#endif
 
 
-	extern "C" MODEL_CONVERTER_API void ImportModelFromFile(
+	extern "C" MODEL_CONVERTER_API bool ImportModelFromFile(
 		const char* inputFilename,      // full path to the model's input data file 
 		const char* outputFilename);    // full path to the model's output data file
 

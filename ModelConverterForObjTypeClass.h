@@ -28,13 +28,13 @@
 using namespace std;
 
 //////////////////////////////////
-// Class name: ModelConverterClass
+// Class name: ModelConverterForObjTypeClass
 //////////////////////////////////
-class ModelConverterClass
+class ModelConverterForObjTypeClass
 {
 public:
-	ModelConverterClass(void);
-	~ModelConverterClass(void);
+	ModelConverterForObjTypeClass(void);
+	~ModelConverterForObjTypeClass(void);
 
 	void Shutdown(void);	// releases the memory
 
@@ -47,7 +47,7 @@ private:
 	// input data file reading handlers  
 	void SkipUntilVerticesData(ifstream & fin);
 	
-	void ReadCounts(ifstream & fin);   // read the count of vertices, textures coordinates and the count of faces as well
+	void ReadCounts(ifstream & fin);     // read the count of vertices, textures coordinates and the count of faces as well
 
 	// calculate counts for particular data block
 	void CalculateCount(ifstream & fin,
@@ -63,15 +63,13 @@ private:
 	bool ReadInAndWriteTexturesData(ifstream & fin, ofstream & fout);
 	bool ReadInAndWriteNormalsData(ifstream & fin, ofstream & fout);
 	bool ReadInFacesData(ifstream & fin);
+	//bool ReadInPartOfFaceData(ifstream & fin, UINT & arrayIndex);
+	bool WriteIndicesIntoOutputFile(ofstream & fout);
 
-	bool ResetConverterState();                   // after each convertation we MUST reset the state of the converter for proper later convertations
-
-	void PrintDebugFilenames(const char* inputFilename, const char* outputFilename) const;
+	void PrintInOutFilenames(const char* inputFilename, const char* outputFilename) const;
 	void PrintError(char* message, ...);
 
-	// output data file writing handlers 
-	bool WriteDataIntoOutputFile(ofstream & fout);  // write model data in an internal model format into the output data file
-	bool WriteIndicesIntoOutputFile(ofstream & fout);
+	
 
 
 
@@ -96,10 +94,6 @@ private:
 		float nz = 0.0f;
 	};
 
-	
-	
-	NORMAL            normal_;
-
 	char* inputLineBuffer_ = nullptr;                   // during execution of the getline() function we put here a one single text line
 
 	streampos posBeforeVerticesData_ = 0;
@@ -115,9 +109,8 @@ private:
 	UINT* pVertexIndicesArray_ = nullptr;
 	UINT* pTextureIndicesArray_ = nullptr;
 
-	bool isPrintConvertProcessMessages_ = false;  // defines whether to print or not in the console messages about the convertation process    
-
-												  // constants
+	
+	// constants
 	const int INPUT_LINE_SIZE_ = 80;              // how many symbols can read the getline() function as one sinle text line
 };
 
