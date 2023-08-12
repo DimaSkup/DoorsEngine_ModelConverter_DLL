@@ -12,15 +12,15 @@ ModelConverterForObjTypeClass::ModelConverterForObjTypeClass(void)
 	}
 	catch (std::bad_alloc & e)
 	{
-		PrintError(ERROR_MSG, e.what());
-		PrintError(ERROR_MSG, "can't allocate memory for some members of the class");
-		exit(-1);
+		Log::Error(LOG_MACRO, e.what());
+		Log::Error(LOG_MACRO, "can't allocate memory for some members of the class");
 	}
 }
 
 ModelConverterForObjTypeClass::~ModelConverterForObjTypeClass(void)
 {
-	Shutdown();
+	delete[] inputLineBuffer_;
+	inputLineBuffer_ = nullptr;
 }
 
 
@@ -32,18 +32,12 @@ ModelConverterForObjTypeClass::~ModelConverterForObjTypeClass(void)
 //
 // ----------------------------------------------------------------------------------- //
 
-void ModelConverterForObjTypeClass::Shutdown(void)
-{
-	delete[] inputLineBuffer_;
-	inputLineBuffer_ = nullptr;
-}
-
 
 // converts a model of the ".obj" type into the internal model format
 bool ModelConverterForObjTypeClass::ConvertFromObj(const char* inputFilename, const char* outputFilename)
 {
 	// print names of the input/output file
-	this->PrintInOutFilenames(inputFilename, outputFilename);
+	this->PrintIOFilenames(inputFilename, outputFilename);
 
 	// open the input file and create an output file
 	std::ifstream fin(inputFilename, std::ios::in | std::ios::binary);	// input data file (.obj)
@@ -54,14 +48,16 @@ bool ModelConverterForObjTypeClass::ConvertFromObj(const char* inputFilename, co
 	if (fin.fail())
 	{
 		std::string errorMsg{ "can't open input data file: " + std::string(inputFilename) };
-		PrintError(ERROR_MSG, errorMsg.c_str());
+		Log::Error(LOG_MACRO, errorMsg.c_str());
+
 		return false;
 	}
 
 	// if it could not open the output file then exit
 	if (fout.bad())
 	{
-		PrintError(ERROR_MSG, "can't open the output file");
+		std::string errorMsg{ "can't open the output data file: " + std::string(outputFilename) };
+		Log::Error(LOG_MACRO, errorMsg.c_str());
 		return false;
 	}
 	
@@ -69,11 +65,10 @@ bool ModelConverterForObjTypeClass::ConvertFromObj(const char* inputFilename, co
 	bool result = this->ConvertFromObjHelper(fin, fout);
 	if (!result)
 	{
-		PrintError(ERROR_MSG, "Model's data has been converted successfully");
+		Log::Error(LOG_MACRO, "can't convert model's data from .obj type");
 		return false;
 	}
 	
-
 	// close the .obj input file and the output file
 	fin.close();
 	fout.close();
@@ -83,14 +78,16 @@ bool ModelConverterForObjTypeClass::ConvertFromObj(const char* inputFilename, co
 
 
 // print into console/log file names of the input/output data file
-void ModelConverterForObjTypeClass::PrintInOutFilenames(const char* inputFilename, const char* outputFilename) const
+void ModelConverterForObjTypeClass::PrintIOFilenames(const char* inputFilename, const char* outputFilename) const
 {
 	// generate a debug message with input/output filenames
 	std::stringstream ss;
 
-	ss << "DATA FILES:\n " << "IN: " << inputFilename << "\n " << "OUT: " << outputFilename;
-	std::cout << ss.str() << "\n\n";
-
+	ss << "\nDATA FILES:\n " 
+	   << "IN: " << inputFilename << "\n " 
+	   << "OUT: " << outputFilename << '\n';
+	Log::Debug(LOG_MACRO, ss.str());
+	
 	return;
 }
 
@@ -117,22 +114,22 @@ bool ModelConverterForObjTypeClass::ConvertFromObjHelper(ifstream& fin, ofstream
 #ifdef _DEBUG 
 
 	// print positions of input file pointers before some particular data block
-	std::cout << "FILE PTR POSITIONS:\n";
-	std::cout << "before VERTICES: " << posBeforeVerticesData_ << '\n';
-	std::cout << "before TEXTURES: " << posBeforeTexturesData_ << '\n';
-	std::cout << "before NORMALS:  " << posBeforeNormalsData_ << '\n';
-	std::cout << "before FACES:    " << posBeforeFacesData_ << '\n';
+	Log::Debug(LOG_MACRO, "FILE PTR POSITIONS:");
+	Log::Debug(LOG_MACRO, "before VERTICES: " + std::to_string(posBeforeVerticesData_));
+	Log::Debug(LOG_MACRO, "before TEXTURES: " + std::to_string(posBeforeTexturesData_));
+	Log::Debug(LOG_MACRO, "before NORMALS:  " + std::to_string(posBeforeNormalsData_)); 
+	Log::Debug(LOG_MACRO, "before FACES:    " + std::to_string(posBeforeFacesData_)); 
 
-	std::cout << "\n";
+	Log::Debug(LOG_MACRO, " ");
 
 	// print counts of vertices/texture coords/normals/faces
-	std::cout << "COUNTS:\n";
-	std::cout << "VERTICES COUNT: " << verticesCount_ << '\n';
-	std::cout << "TEXTURES COUNT: " << textureCoordsCount_ << '\n';
-	std::cout << "NORMALS COUNT:  " << normalsCount_ << '\n';
-	std::cout << "FACES COUNT:    " << facesCount_ << std::endl;
+	Log::Debug(LOG_MACRO, "COUNTS:\n");
+	Log::Debug(LOG_MACRO, "VERTICES COUNT: " + std::to_string(verticesCount_));
+	Log::Debug(LOG_MACRO, "TEXTURES COUNT: " + std::to_string(textureCoordsCount_));
+	Log::Debug(LOG_MACRO, "NORMALS COUNT:  " + std::to_string(normalsCount_));
+	Log::Debug(LOG_MACRO, "FACES COUNT:    " + std::to_string(facesCount_));
 
-	std::cout << "\n\n";
+	Log::Debug(LOG_MACRO, " ");
 
 #endif
 
@@ -151,40 +148,40 @@ bool ModelConverterForObjTypeClass::ConvertFromObjHelper(ifstream& fin, ofstream
 	// handle vertices data
 	if (!ReadInAndWriteVerticesData(fin, fout))
 	{
-		PrintError(ERROR_MSG, "can't read/write vertices data");
+		Log::Error(LOG_MACRO, "can't read/write vertices data");
 		return false;
 	}
-	std::cout << "VERTICES DATA WAS HANDLED CORRECTLY" << std::endl;
+	Log::Debug(LOG_MACRO, "VERTICES DATA WAS HANDLED CORRECTLY");
 
 
 	// handle texture coords data
 	if (!ReadInAndWriteTexturesData(fin, fout))
 	{
-		PrintError(ERROR_MSG, "can't read/write textures data");
+		Log::Error(LOG_MACRO, "can't read/write textures data");
 		return false;
 	}
-	std::cout << "TEXTURE DATA WAS HANDLED CORRECTLY" << std::endl;
+	Log::Debug(LOG_MACRO, "TEXTURE DATA WAS HANDLED CORRECTLY");
 
 
 	/*
 	// handle normals data
 	if (!ReadInAndWriteNormalsData(fin, fout))
 	{
-		PrintError(ERROR_MSG, "can't read/write normals data");
+		Log::Error(LOG_MACRO, "can't read/write normals data");
 		return false;
 	}
-
-	std::cout << "NORMALS DATA WAS HANDLED CORRECTLY" << std::endl;
+	Log::Debug(LOG_MACRO, "NORMALS DATA WAS HANDLED CORRECTLY")
+	
 	*/
 
 
 	// read in faces data
 	if (!ReadInFacesData(fin))
 	{
-		PrintError(ERROR_MSG, "can't read in faces data");
+		Log::Error(LOG_MACRO, "can't read in faces data");
 		return false;
 	}
-	std::cout << "FACES DATA WAS READ IN SUCCESSFULLY" << std::endl;
+	Log::Debug(LOG_MACRO, "FACES DATA WAS READ IN SUCCESSFULLY");
 
 	// because earlier we've went up to
 	// the end of the file (EOF) we have to clear ifstream state
@@ -193,12 +190,16 @@ bool ModelConverterForObjTypeClass::ConvertFromObjHelper(ifstream& fin, ofstream
 	// write faces data
 	if (!this->WriteIndicesIntoOutputFile(fout))
 	{
-		PrintError(ERROR_MSG, "can't read/write indices data");
+		Log::Error(LOG_MACRO, "can't read/write indices data");
 		return false;
 	}
 
-	std::cout << "FACES DATA WAS WRITTEN SUCCESSFULLY" << std::endl;
-	std::cout << "\n-----   CONVERTATION IS FINISHED   -----\n\n" << std::endl;
+	Log::Debug(LOG_MACRO, "FACES DATA WAS WRITTEN SUCCESSFULLY");
+	Log::Debug(LOG_MACRO, "-----   CONVERTATION IS FINISHED   -----");
+
+	// put two empty lines in the log file to separate this convertation's log from the other
+	Log::Debug(LOG_MACRO, "");    
+	Log::Debug(LOG_MACRO, "");
 
 	return true;
 }
@@ -285,8 +286,8 @@ void ModelConverterForObjTypeClass::CalculateCount(ifstream & fin,
 	}
 	catch (std::ifstream::failure e)
 	{
-		this->PrintError(ERROR_MSG, "Exception reading file:");
-		this->PrintError(ERROR_MSG, e.what());
+		Log::Error(LOG_MACRO, "Exception reading file:");
+		Log::Error(LOG_MACRO, e.what());
 	}
 
 	return;
@@ -327,8 +328,8 @@ bool ModelConverterForObjTypeClass::ReadInAndWriteVerticesData(ifstream & fin, o
 	}
 	catch (std::ifstream::failure & e)
 	{
-		this->PrintError(ERROR_MSG, "Exception reading/writing file:");
-		this->PrintError(ERROR_MSG, e.what());
+		Log::Error(LOG_MACRO, "Exception reading/writing file:");
+		Log::Error(LOG_MACRO, e.what());
 	}
 
 	return true;
@@ -362,8 +363,8 @@ bool ModelConverterForObjTypeClass::ReadInAndWriteTexturesData(ifstream & fin, o
 	}
 	catch (std::ifstream::failure & e)
 	{
-		this->PrintError(ERROR_MSG, "Exception reading/writing file:");
-		this->PrintError(ERROR_MSG, e.what());
+		Log::Error(LOG_MACRO, "Exception reading/writing file:");
+		Log::Error(LOG_MACRO, e.what());
 	}
 
 	return true;
@@ -398,8 +399,8 @@ bool ModelConverterForObjTypeClass::ReadInAndWriteNormalsData(ifstream& fin, ofs
 	}
 	catch (std::ifstream::failure & e)
 	{
-		this->PrintError(ERROR_MSG, "Exception reading/writing file:");
-		this->PrintError(ERROR_MSG, e.what());
+		Log::Error(LOG_MACRO, "Exception reading/writing file:");
+		Log::Error(LOG_MACRO, e.what());
 	}
 
 	return true;
@@ -462,7 +463,7 @@ bool ModelConverterForObjTypeClass::ReadInFacesData(ifstream & fin)
 				fin >> vertexIndex;      // read in a VERTEX index
 				if (fin.bad())
 				{
-					PrintError(ERROR_MSG, "error about reading of the vertex index");
+					Log::Error(LOG_MACRO, "error about reading of the vertex index");
 					return false;
 				}
 				fin.ignore();            // ignore "/"
@@ -471,7 +472,7 @@ bool ModelConverterForObjTypeClass::ReadInFacesData(ifstream & fin)
 				fin >> textureIndex;     // read in a TEXTURE index
 				if (fin.bad())
 				{
-					PrintError(ERROR_MSG, "error about reading of the texture index");
+					Log::Error(LOG_MACRO, "error about reading of the texture index");
 					return false;
 				}
 				fin.ignore();            // ignore "/"
@@ -480,7 +481,7 @@ bool ModelConverterForObjTypeClass::ReadInFacesData(ifstream & fin)
 				fin >> normalIndex;      // read in an index of the NORMAL vector
 				if (fin.bad())
 				{
-					PrintError(ERROR_MSG, "error about reading of the normal index");
+					Log::Error(LOG_MACRO, "error about reading of the normal index");
 					return false;
 				}
 
@@ -532,48 +533,6 @@ bool ModelConverterForObjTypeClass::WriteIndicesIntoOutputFile(ofstream & fout)
 	}
 
 	return true;
-}
-
-// for DEBUG purpose
-void ModelConverterForObjTypeClass::PrintError(char* message, ...)
-{
-	va_list args;
-	int len = 0;
-	char* buffer = nullptr;
-	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(handle, 0x0004);  // set console text color to red
-
-	va_start(args, message);
-	len = _vscprintf(message, args) + 1;	// +1 together with '/0'
-
-	try
-	{
-		buffer = new char[len];
-	}
-	catch (std::bad_alloc & e)
-	{
-		std::cout << "ModelConverterForObjTypeClass: PrintError(): " << e.what() << '\n';
-		std::cout << "ModelConverterForObjTypeClass: PrintError(): can't allocate memory for the buffer" << std::endl;
-
-		va_end(args);
-		return;
-	}
-
-
-	vsprintf_s(buffer, len, message, args);
-
-	clock_t cl = clock();
-	char time[9];
-
-	_strtime_s(time, 9);
-	printf("%s::%d|\t%s%s\n\n", time, cl, "ERROR: ", buffer);
-
-	delete[] buffer;
-	buffer = nullptr;
-
-	SetConsoleTextAttribute(handle, 0x0007);   // set console text color to white
-
-	return;
 }
 
 

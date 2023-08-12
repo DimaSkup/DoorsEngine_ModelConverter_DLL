@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Log.h"
+
 namespace ModelConverter
 {
 	// when the MODEL_CONVERTER_DLL_EXPORTS macro is defined, the MODEL_CONVERTER_API
@@ -14,6 +16,9 @@ namespace ModelConverter
 	#else
 		#define MODEL_CONVERTER_API __declspec(dllimport)
 	#endif
+
+
+	static Log log;
 
 
 	// DEFINE THE DLL's INTERFACE

@@ -17,5 +17,9 @@ public:
 			std::cout << "can't convert .obj into the internal model format" << std::endl;
 			return false;
 		}
+
+		return true;
 	}
+
+	
 };

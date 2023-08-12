@@ -10,10 +10,8 @@
 //////////////////////////////////
 // INCLUDES
 //////////////////////////////////
-//#include "../Engine/Log.h"
-//#include "../Engine/Settings.h"   // here we get some settings for the convertation process
 
-#define ERROR_MSG "%s() (%d): %s",__FUNCTION__, __LINE__
+#include "Log.h"       // for using the log system
 
 #include <windows.h>
 #include <fstream>
@@ -36,9 +34,7 @@ public:
 	ModelConverterForObjTypeClass(void);
 	~ModelConverterForObjTypeClass(void);
 
-	void Shutdown(void);	// releases the memory
-
-							// converts .obj file model data into the internal model format
+	// converts .obj file model data into the internal model format
 	bool ConvertFromObj(const char* inputFilename, const char* outputFilename);
 
 private:
@@ -59,17 +55,14 @@ private:
 										 //    technical lines or empty lines so skip it until 
 										 //    the next data block which starts with symbols are
 										 //    stored in the skipUntilPrefix variable);
+
 	bool ReadInAndWriteVerticesData(ifstream & fin, ofstream & fout);
 	bool ReadInAndWriteTexturesData(ifstream & fin, ofstream & fout);
 	bool ReadInAndWriteNormalsData(ifstream & fin, ofstream & fout);
 	bool ReadInFacesData(ifstream & fin);
-	//bool ReadInPartOfFaceData(ifstream & fin, UINT & arrayIndex);
 	bool WriteIndicesIntoOutputFile(ofstream & fout);
 
-	void PrintInOutFilenames(const char* inputFilename, const char* outputFilename) const;
-	void PrintError(char* message, ...);
-
-	
+	void PrintIOFilenames(const char* inputFilename, const char* outputFilename) const;
 
 
 

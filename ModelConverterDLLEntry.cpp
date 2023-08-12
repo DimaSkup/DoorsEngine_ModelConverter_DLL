@@ -3,6 +3,8 @@
 #include "ModelConverterDLLEntry.h"
 #include "ModelConverterInterface.h"
 #include "ModelConverterForObjTypeClass.h"
+#include "Log.h"
+
 #include <iostream>
 #include <cassert>
 
@@ -16,14 +18,9 @@ bool ModelConverter::ImportModelFromFile(
 	assert((outputFilename != nullptr) && (outputFilename[0] != '\0'));
 
 
-	// check if we already have an OUTPUT data file for the model of such type
-	//std::ifstream fin(outputFilename, std::ios::in | std::ios::binary);
-	//bool executeModelConvertation = executeModelConvertation = fin.fail();
-
-
 	std::unique_ptr<ModelConverterInterface> pModelConverter = std::make_unique<ModelConverterInterface>();
 
-	std::cout << "\n\n\n-----   START OF THE CONVERTATION PROCESS:   -----\n";
+	//Log::Debug("\n\n\n-----   START OF THE CONVERTATION PROCESS:   -----\n";
 
 	bool result = pModelConverter->Convert(inputFilename, outputFilename);
 	if (!result)
